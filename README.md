@@ -1,8 +1,8 @@
 # {repo_name}
 
-A simulation of a robust event listener component for a cross-chain bridge. This Python script demonstrates the architectural patterns required to reliably listen for on-chain events on a source blockchain and trigger corresponding actions on a destination blockchain.
+A simulation of a robust event listener for a cross-chain bridge. This Python script demonstrates the architectural patterns required to reliably listen for on-chain events on a source blockchain and trigger corresponding actions on a destination blockchain.
 
-This project is designed as an architectural showcase, simulating blockchain interactions without requiring a live RPC endpoint. It highlights best practices such as state management, error handling, and modular design.
+This project is an architectural showcase, simulating blockchain interactions without requiring a live RPC endpoint. It highlights best practices for building reliable blockchain services, including state management, error handling, and modular design.
 
 ## Concept
 
@@ -10,13 +10,24 @@ Cross-chain bridges allow users to transfer assets or data from one blockchain t
 
 This script simulates such a component. Its primary function is to:
 1.  **Monitor** a `Bridge` smart contract on a source chain.
-2.  **Listen** for a `TokensLocked` event, which is emitted when a user deposits assets into the bridge.
+2.  **Listen** for a `TokensLocked` event, which is emitted when a user deposits assets.
 3.  **Parse** the event data to extract details like the user, token, amount, and destination chain.
-4.  **Relay** this information to a destination chain by simulating the submission of a new transaction (e.g., a `mint` transaction to issue wrapped tokens to the user).
+4.  **Relay** this information to a destination chain by simulating the submission of a new transaction (e.g., a `mint` transaction to issue wrapped tokens).
+
+The listener specifically targets an event with a structure like this:
+```solidity
+// Simplified event from a source Bridge.sol contract
+event TokensLocked(
+    address indexed user,
+    address indexed token,
+    uint256 amount,
+    uint256 destinationChainId
+);
+```
 
 ## Code Architecture
 
-The script is structured into several distinct classes, each with a single responsibility, to ensure modularity and testability.
+The script is structured into several distinct classes, each with a single responsibility to ensure modularity and testability.
 
 ```
 +----------------------------+
@@ -66,7 +77,7 @@ The listener operates in a continuous polling loop:
 1.  **Initialization**: On startup, the listener initializes all components and connects to the (simulated) source and destination chain RPC endpoints.
 2.  **State Loading**: It loads its previous state from `state.json` using the `StateDB` class. This tells it which block to start scanning from.
 3.  **Polling Loop**: The listener enters an infinite loop, periodically checking for new blocks.
-4.  **Block Confirmation**: To protect against blockchain re-organizations (reorgs), it does not process the absolute latest block. Instead, it waits for a certain number of blocks (`CONFIRMATIONS_REQUIRED`) to pass, ensuring the events it processes are on a finalized block.
+4.  **Block Confirmation**: To handle potential blockchain re-organizations (reorgs), the listener waits for a certain number of blocks (`CONFIRMATIONS_REQUIRED`) to pass before processing events. This ensures the events it acts upon are on a finalized portion of the chain.
 5.  **Event Fetching**: For the confirmed block range, it calls the `MockBlockchainConnector` to fetch all logs that match the bridge contract's address and the `TokensLocked` event signature.
 6.  **Parsing & Deduplication**: Each fetched log is parsed by the `EventParser`. A unique hash for the event is generated, and the `StateDB` is checked to ensure it has not been processed before.
 7.  **Transaction Relaying**: For each new, valid event, the `TransactionRelayer` is invoked to simulate the corresponding transaction on the destination chain.
@@ -77,33 +88,34 @@ The listener operates in a continuous polling loop:
 
 Follow these steps to run the simulation.
 
-**1. Clone the repository**
+**1. Clone the Repository**
 ```bash
+# Replace <your-repo-url> with the actual URL
 git clone <your-repo-url>
 cd {repo_name}
 ```
 
-**2. Set up a virtual environment**
+**2. Set Up a Virtual Environment**
 It's highly recommended to use a virtual environment to manage dependencies.
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
 ```
 
-**3. Install dependencies**
-This project has no external dependencies, but if it did, you would install them like this:
+**3. Install Dependencies**
+This project has no external runtime dependencies. If a `requirements.txt` file is present, it may contain development tools which you can install via:
 ```bash
 pip install -r requirements.txt
 ```
 
-**4. Configure environment variables (Optional)**
+**4. Configure Environment Variables (Optional)**
 The script uses default mock RPC URLs. You can override them via environment variables if you wish to modify the simulation parameters.
 ```bash
 export SOURCE_CHAIN_RPC="https://mock.source.chain.rpc"
 export DEST_CHAIN_RPC="https://mock.dest.chain.rpc"
 ```
 
-**5. Run the script**
+**5. Run the Script**
 ```bash
 python main.py
 ```
@@ -116,12 +128,10 @@ You will see log messages indicating the listener's activity, such as connecting
 2023-10-27 14:30:00 - INFO - [MockBlockchainConnector] - [SourceChain] MockConnector initialized for https://mock.source.chain.rpc
 2023-10-27 14:30:00 - INFO - [MockBlockchainConnector] - [DestChain] MockConnector initialized for https://mock.dest.chain.rpc
 2023-10-27 14:30:00 - INFO - [StateDB] - Loading state from state.json
-2023-10-27 14:30:00 - INFO - [MockBlockchainConnector] - [SourceChain] Successfully connected to mock RPC endpoint.
-2023-10-27 14:30:00 - INFO - [MockBlockchainConnector] - [DestChain] Successfully connected to mock RPC endpoint.
 2023-10-27 14:30:00 - INFO - [main] - Listener started. Polling for new blocks...
 2023-10-27 14:30:00 - INFO - [main] - Scanning blocks from 15001 to 15112...
 2023-10-27 14:30:00 - INFO - [MockBlockchainConnector] - [SourceChain] Found mock event in block 15005
-2023-10-27 14:30:00 - INFO - [main] - Processing new event: {'event_name': 'TokensLocked', 'user': '0x...', 'token': '0x...', 'amount': 12345..., 'destinationChainId': 2, 'transactionHash': '0x...', 'blockNumber': 15005}
-2023-10-27 14:30:00 - INFO - [TransactionRelayer] - [DestChain] Relaying transaction for user 0x... 
+2023-10-27 14:30:00 - INFO - [main] - Processing new event: {'event_name': 'TokensLocked', 'user': '0xabc...def', 'token': '0x123...456', 'amount': 1000000000000000000, 'destinationChainId': 2, 'transactionHash': '0xaaa...bbb', 'blockNumber': 15005}
+2023-10-27 14:30:00 - INFO - [TransactionRelayer] - [DestChain] Relaying transaction for user 0xabc...def
 ...
 ```
