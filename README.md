@@ -6,9 +6,9 @@ This project is an architectural showcase, simulating blockchain interactions wi
 
 ## Concept
 
-Cross-chain bridges allow users to transfer assets or data from one blockchain to another. A critical component of any bridge is the 'relayer' or 'oracle' network that monitors the source chain for specific events and relays them to the destination chain.
+Cross-chain bridges allow users to transfer assets or data from one blockchain to another. A critical component of any bridge is the "relayer" or "oracle" network that monitors the source chain for specific events and relays them to the destination chain.
 
-This script simulates such a component. Its primary function is to:
+This script simulates such a component. Its primary functions are to:
 1.  **Monitor** a `Bridge` smart contract on a source chain.
 2.  **Listen** for a `TokensLocked` event, which is emitted when a user deposits assets.
 3.  **Parse** the event data to extract details like the user, token, amount, and destination chain.
@@ -82,7 +82,7 @@ The listener operates in a continuous polling loop:
 6.  **Parsing & Deduplication**: Each fetched log is parsed by the `EventParser`. A unique hash for the event is generated, and the `StateDB` is checked to ensure it has not been processed before.
 7.  **Transaction Relaying**: For each new, valid event, the `TransactionRelayer` is invoked to simulate the corresponding transaction on the destination chain.
 8.  **State Persistence**: After processing a batch of blocks, the listener updates the `last_processed_block` in its state via `StateDB` and saves it to disk.
-9.  **Graceful Shutdown**: If the process is interrupted (e.g., with Ctrl+C), it catches the signal, saves its current state, and exits cleanly.
+9.  **Graceful Shutdown**: If the process is interrupted (e.g., with Ctrl+C), it catches the signal, saves its current state, and exits gracefully.
 
 ## Getting Started
 
@@ -90,8 +90,7 @@ Follow these steps to run the simulation.
 
 **1. Clone the Repository**
 ```bash
-# Replace <your-repo-url> with the actual URL
-git clone <your-repo-url>
+git clone https://github.com/your-username/{repo_name}.git
 cd {repo_name}
 ```
 
@@ -103,7 +102,7 @@ source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
 ```
 
 **3. Install Dependencies**
-This project has no external runtime dependencies. If a `requirements.txt` file is present, it may contain development tools which you can install via:
+This project has no external runtime dependencies. A `requirements.txt` file may be included for development tools, which can be installed using:
 ```bash
 pip install -r requirements.txt
 ```
@@ -116,11 +115,12 @@ export DEST_CHAIN_RPC="https://mock.dest.chain.rpc"
 ```
 
 **5. Run the Script**
+Start the listener by running the main script. The simulation will begin, and you will see its activity logged to the console.
 ```bash
 python main.py
 ```
 
-**Expected Output**
+### Expected Output
 You will see log messages indicating the listener's activity, such as connecting to chains, scanning blocks, and processing simulated events.
 
 ```
